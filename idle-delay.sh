@@ -119,10 +119,76 @@ auto-run() {
   done # End of forever loop
 }
 
+install() {
+idle_delay_config_url=https://github.com/tmiland/idle-delay/raw/main/.idle_delay_config
+idle_delay_config_sh_url=https://github.com/tmiland/idle-delay/raw/main/idle-delay-config.sh
+idle_delay_url=https://github.com/tmiland/idle-delay/raw/main/idle-delay.sh
+idle_delay_service=https://github.com/tmiland/idle-delay/raw/main/idle-delay.service
+
+  download_files() {
+  if [[ $(command -v 'curl') ]]; then
+    curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
+    curl -fsSLk "$idle_delay_config_sh_url" > "${config_folder}"/idle-delay-config.sh
+    curl -fsSLk "$idle_delay_url" > "${config_folder}"/idle-delay.sh
+    curl -fsSLk "$idle_delay_service" > ~/.config/systemd/user/idle-delay.service
+  elif [[ $(command -v 'wget') ]]; then
+    wget -q "$idle_delay_config_url" -O "${config_folder}"/.idle_delay_config
+    wget -q "$idle_delay_config_sh_url" -O "${config_folder}"/idle-delay-config.sh
+    wget -q "$idle_delay_url" -O "${config_folder}"/idle-delay.sh
+    wget -q "$idle_delay_service" -O ~/.config/systemd/user/idle-delay.service
+  else
+    echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
+    exit 0
+  fi
+}
+echo ""
+read -n1 -r -p "Idle-delay is ready to be installed, press any key to continue..."
+echo ""
+download_files
+ ln -sfn ~/.idle_delay/idle-delay.sh /usr/local/bin/idle-delay
+ chmod +x ~/.idle_delay/idle-delay.sh
+ chmod +x ~/.idle_delay/idle-delay-config.sh
+ /usr/local/bin/idle-delay -c
+ systemctl --user enable idle-delay.service &&
+ systemctl --user start idle-delay.service &&
+ systemctl --user status idle-delay.service
+ echo "Install finished, now connect your phone and enjoy..."
+}
+
+uninstall() {
+  echo ""
+  read -n1 -r -p "Idle-delay is ready to be installed, press any key to continue..."
+  echo ""
+  rm -rf "$config_folder"
+  sudo rm -rf /usr/local/bin/idle-delay
+  systemctl --user disable idle-delay.service
+  rm -rf ~/.config/systemd/user/idle-delay.service
+  echo "Uninstall finished, have a good day..."
+}
+
+usage() {
+  # shellcheck disable=SC2046
+  printf "Usage: %s %s [options]\\n" "" $(basename "$0")
+  echo
+  printf "  --help               | -h           show this help message\\n"
+  printf "  --idle-delay         | -id          set idle delay in minutes\\n"
+  printf "  --current-idle-delay | -cid         show current idle-delay in minutes\\n"
+  printf "  --auto-run           | -ar          auto run\\n"
+  printf "  --config             | -c           run config dialog\\n"
+  printf "  --install            | -i           install\\n"
+  printf "  --uninstall          | -u           uninstall\\n"
+  printf "\\n"
+  echo
+}
+
 ARGS=()
 while [[ $# -gt 0 ]]
 do
   case $1 in
+    --help | -h)
+      usage
+      exit 0
+      ;;
     --idle-delay | -id) # Bash Space-Separated (e.g., --option argument)
       idle-delay "$2" # Source: https://stackoverflow.com/a/14203146
       shift # past argument
@@ -139,6 +205,14 @@ do
       ;;
     --config | -c)
       config
+      exit 0
+      ;;
+    --install | -i)
+      install
+      exit 0
+      ;;
+    --uninstall | -u)
+      install
       exit 0
       ;;
     -*|--*)
