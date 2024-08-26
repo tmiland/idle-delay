@@ -145,7 +145,7 @@ echo ""
 read -n1 -r -p "Idle-delay is ready to be installed, press any key to continue..."
 echo ""
 download_files
- ln -sfn ~/.idle_delay/idle-delay.sh /usr/local/bin/idle-delay
+ sudo ln -sfn ~/.idle_delay/idle-delay.sh /usr/local/bin/idle-delay
  chmod +x ~/.idle_delay/idle-delay.sh
  chmod +x ~/.idle_delay/idle-delay-config.sh
  /usr/local/bin/idle-delay -c
