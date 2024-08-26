@@ -166,6 +166,8 @@ download_files
  systemctl --user start idle-delay.service &&
  systemctl --user status idle-delay.service --no-pager
  echo "Install finished, now connect your phone and enjoy..."
+ echo "You can resume screen with 'screen -r idle-delay' "
+ echo "Restart service with 'systemdctl --user restart idle-delay' "
 }
 
 uninstall() {
