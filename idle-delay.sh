@@ -120,10 +120,11 @@ auto-run() {
 }
 
 install() {
-idle_delay_config_url=https://github.com/tmiland/idle-delay/raw/main/.idle_delay_config
-idle_delay_config_sh_url=https://github.com/tmiland/idle-delay/raw/main/idle-delay-config.sh
-idle_delay_url=https://github.com/tmiland/idle-delay/raw/main/idle-delay.sh
-idle_delay_service=https://github.com/tmiland/idle-delay/raw/main/idle-delay.service
+url=https://github.com/tmiland/idle-delay/raw/main
+idle_delay_config_url=$url/.idle_delay_config
+idle_delay_config_sh_url=$url/idle-delay-config.sh
+idle_delay_url=$url/idle-delay.sh
+idle_delay_service=$url/idle-delay.service
 systemd_user_folder=$HOME/.config/systemd/user
 if ! [[ -d $systemd_user_folder ]]
 then
