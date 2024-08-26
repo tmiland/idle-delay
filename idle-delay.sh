@@ -129,6 +129,12 @@ if ! [[ -d $systemd_user_folder ]]
 then
   mkdir -p "$systemd_user_folder"
 fi
+local_bin_folder=$HOME/.local/bin
+if ! [[ -d $local_bin_folder ]]
+then
+  mkdir -p "$local_bin_folder"
+fi
+
   download_files() {
   if [[ $(command -v 'curl') ]]; then
     curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
