@@ -124,7 +124,11 @@ idle_delay_config_url=https://github.com/tmiland/idle-delay/raw/main/.idle_delay
 idle_delay_config_sh_url=https://github.com/tmiland/idle-delay/raw/main/idle-delay-config.sh
 idle_delay_url=https://github.com/tmiland/idle-delay/raw/main/idle-delay.sh
 idle_delay_service=https://github.com/tmiland/idle-delay/raw/main/idle-delay.service
-
+systemd_user_folder=$HOME/.config/systemd/user
+if [[ ! -d $systemd_user_folder ]]
+then
+  mkdir -p "$systemd_user_folder"
+fi
   download_files() {
   if [[ $(command -v 'curl') ]]; then
     curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
@@ -135,7 +139,7 @@ idle_delay_service=https://github.com/tmiland/idle-delay/raw/main/idle-delay.ser
     wget -q "$idle_delay_config_url" -O "${config_folder}"/.idle_delay_config
     wget -q "$idle_delay_config_sh_url" -O "${config_folder}"/idle-delay-config.sh
     wget -q "$idle_delay_url" -O "${config_folder}"/idle-delay.sh
-    wget -q "$idle_delay_service" -O ~/.config/systemd/user/idle-delay.service
+    wget -q "$idle_delay_service" -O $HOME/.config/systemd/user/idle-delay.service
   else
     echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
     exit 0
@@ -145,11 +149,11 @@ echo ""
 read -n1 -r -p "Idle-delay is ready to be installed, press any key to continue..."
 echo ""
 download_files
- ln -sfn ~/.idle_delay/idle-delay.sh "$HOME"/.local/bin/idle-delay
- chmod +x ~/.idle_delay/idle-delay.sh
- chmod +x ~/.idle_delay/idle-delay-config.sh
+ ln -sfn $HOME/.idle_delay/idle-delay.sh "$HOME"/.local/bin/idle-delay
+ chmod +x $HOME/.idle_delay/idle-delay.sh
+ chmod +x $HOME/.idle_delay/idle-delay-config.sh
  "$HOME"/.local/bin/idle-delay -c
- sed -i "s|/usr/local/bin/idle-delay|$HOME/.local/bin/idle-delay|g" ~/.config/systemd/user/idle-delay.service
+ sed -i "s|/usr/local/bin/idle-delay|$HOME/.local/bin/idle-delay|g" $HOME/.config/systemd/user/idle-delay.service
  systemctl --user enable idle-delay.service &&
  systemctl --user start idle-delay.service &&
  systemctl --user status idle-delay.service
@@ -163,7 +167,7 @@ uninstall() {
   rm -rf "$config_folder"
   rm -rf "$HOME"/.local/bin/idle-delay
   systemctl --user disable idle-delay.service
-  rm -rf ~/.config/systemd/user/idle-delay.service
+  rm -rf $HOME/.config/systemd/user/idle-delay.service
   echo "Uninstall finished, have a good day..."
 }
 
