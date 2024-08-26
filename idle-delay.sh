@@ -223,7 +223,7 @@ do
       exit 0
       ;;
     --uninstall | -u)
-      install
+      uninstall
       exit 0
       ;;
     -*|--*)
