@@ -133,6 +133,14 @@ fi
 if ! [[ $(command -v 'screen') ]]; then
   sudo apt install screen
 fi
+if ! [[ $(command -v 'libnotify-bin') ]]; then
+  sudo apt install libnotify-bin
+fi
+# Set idle-delay to default if it isn't already
+if [[ ! $get_idle_delay -eq $idle_default ]]
+then
+  idle-delay "$idle_default"
+fi
   download_files() {
   if [[ $(command -v 'curl') ]]; then
     curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
