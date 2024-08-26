@@ -162,7 +162,7 @@ download_files
  sed -i "s|/usr/local/bin/idle-delay|$HOME/.local/bin/idle-delay|g" "$HOME"/.config/systemd/user/idle-delay.service
  systemctl --user enable idle-delay.service &&
  systemctl --user start idle-delay.service &&
- systemctl --user status idle-delay.service
+ systemctl --user status idle-delay.service --no-pager
  echo "Install finished, now connect your phone and enjoy..."
 }
 
