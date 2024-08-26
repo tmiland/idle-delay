@@ -125,7 +125,7 @@ idle_delay_config_sh_url=https://github.com/tmiland/idle-delay/raw/main/idle-del
 idle_delay_url=https://github.com/tmiland/idle-delay/raw/main/idle-delay.sh
 idle_delay_service=https://github.com/tmiland/idle-delay/raw/main/idle-delay.service
 systemd_user_folder=$HOME/.config/systemd/user
-if [[ ! -d $systemd_user_folder ]]
+if ! [[ -d $systemd_user_folder ]]
 then
   mkdir -p "$systemd_user_folder"
 fi
