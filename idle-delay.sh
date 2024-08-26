@@ -134,7 +134,9 @@ if ! [[ -d $local_bin_folder ]]
 then
   mkdir -p "$local_bin_folder"
 fi
-
+if [[ $(command -v 'screen') ]]; then
+  sudo apt install screen
+fi
   download_files() {
   if [[ $(command -v 'curl') ]]; then
     curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
