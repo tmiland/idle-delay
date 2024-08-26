@@ -36,7 +36,7 @@ fi
 
 config_folder=$HOME/.idle_delay
 config=$config_folder/idle-delay-config.sh
-cfg_file=$config_folder/idle_delay_config
+cfg_file=$config_folder/.idle_delay_config
 
 if [[ ! -f $cfg_file ]]
 then
@@ -73,8 +73,8 @@ config() {
 get_idle_delay=$(gsettings get org.gnome.desktop.session idle-delay | sed 's|uint32 ||g')
 
 idle-delay() {
-  gsettings set org.gnome.desktop.session idle-delay $(("$1"*60))
-  echo "idle-delay was currently set to $((get_idle_delay/60)) minutes, now changed to $1"
+  gsettings set org.gnome.desktop.session idle-delay $(( $1 * 60 ))
+  echo "idle-delay was currently set to $(( get_idle_delay / 60 )) minutes, now changed to $1"
 }
 
 auto-run() {
@@ -91,31 +91,26 @@ auto-run() {
     # Phone connected? Set idle-delay to 120 minutes
     if [[ $get_usb_info == "connected" ]]
     then
-      if [[ $(( $get_idle_delay / 60 )) -eq $idle_disconnected ]]
+      if [[ $(( get_idle_delay / 60 )) -eq $idle_disconnected ]] ||
+      [[ $(( get_idle_delay / 60 )) -eq $idle_default ]]
       then
         echo "Phone is connected, idle-delay set to 120 minutes"
-        idle-delay $idle_connected
+        idle-delay "$idle_connected"
         notify-send "Phone is connected, idle-delay set to 120 minutes"
       fi
-      continue
     fi
     # Phone disconnected? Set idle-delay to 10 minutes
     if [[ $get_usb_info == "disconnected" ]]
     then
-      if [[ $(( $get_idle_delay / 60 )) -eq $idle_connected ]]
+      if [[ $(( get_idle_delay / 60 )) -eq $idle_connected ]] ||
+      [[ $(( get_idle_delay / 60 )) -eq $idle_default ]]
       then
         echo "Phone is disconnected, idle-delay set to 10 minutes"
-        idle-delay $idle_disconnected
+        idle-delay "$idle_disconnected"
         notify-send "Phone is disconnected, idle-delay set to 10 minutes"
       fi
-      continue
     fi
-    # Set to default if no phone is detected
-    if ! [[ $get_usb_info == "disconnected" ]] || ! [[ $get_usb_info == "connected" ]]
-    then 
-      idle-delay "$idle_default"
-    fi
-    sleep 60 # reset once / minute.
+    sleep 7 # reset once / minute.
   done # End of forever loop
 }
 
