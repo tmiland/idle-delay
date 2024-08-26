@@ -27,6 +27,7 @@ curl -fsSLk https://github.com/tmiland/idle-delay/raw/main/idle-delay.sh | bash 
 - curl or wget
 - screen
 - systemd
+- libnotify-bin
 
 #### Disclaimer 
 
