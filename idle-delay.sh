@@ -32,7 +32,7 @@ if [[ $2 == "debug" ]]; then
   set -o nounset
   set -o xtrace
 fi
-# Symlink: ln -sfn ~/.idle_delay/idle-delay.sh /usr/local/bin/idle-delay
+# Symlink: ln -sfn $HOME/.idle_delay/idle-delay.sh $HOME/.local/bin/idle-delay
 
 config_folder=$HOME/.idle_delay
 config=$config_folder/idle-delay-config.sh
@@ -145,10 +145,11 @@ echo ""
 read -n1 -r -p "Idle-delay is ready to be installed, press any key to continue..."
 echo ""
 download_files
- sudo ln -sfn ~/.idle_delay/idle-delay.sh /usr/local/bin/idle-delay
+ ln -sfn ~/.idle_delay/idle-delay.sh "$HOME"/.local/bin/idle-delay
  chmod +x ~/.idle_delay/idle-delay.sh
  chmod +x ~/.idle_delay/idle-delay-config.sh
- /usr/local/bin/idle-delay -c
+ "$HOME"/.local/bin/idle-delay -c
+ sed -i "s|/usr/local/bin/idle-delay|$HOME/.local/bin/idle-delay|g" ~/.config/systemd/user/idle-delay.service
  systemctl --user enable idle-delay.service &&
  systemctl --user start idle-delay.service &&
  systemctl --user status idle-delay.service
@@ -160,7 +161,7 @@ uninstall() {
   read -n1 -r -p "Idle-delay is ready to be installed, press any key to continue..."
   echo ""
   rm -rf "$config_folder"
-  sudo rm -rf /usr/local/bin/idle-delay
+  rm -rf "$HOME"/.local/bin/idle-delay
   systemctl --user disable idle-delay.service
   rm -rf ~/.config/systemd/user/idle-delay.service
   echo "Uninstall finished, have a good day..."
