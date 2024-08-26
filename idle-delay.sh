@@ -134,12 +134,12 @@ fi
     curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
     curl -fsSLk "$idle_delay_config_sh_url" > "${config_folder}"/idle-delay-config.sh
     curl -fsSLk "$idle_delay_url" > "${config_folder}"/idle-delay.sh
-    curl -fsSLk "$idle_delay_service" > ~/.config/systemd/user/idle-delay.service
+    curl -fsSLk "$idle_delay_service" > "$systemd_user_folder"/idle-delay.service
   elif [[ $(command -v 'wget') ]]; then
     wget -q "$idle_delay_config_url" -O "${config_folder}"/.idle_delay_config
     wget -q "$idle_delay_config_sh_url" -O "${config_folder}"/idle-delay-config.sh
     wget -q "$idle_delay_url" -O "${config_folder}"/idle-delay.sh
-    wget -q "$idle_delay_service" -O $HOME/.config/systemd/user/idle-delay.service
+    wget -q "$idle_delay_service" -O "$systemd_user_folder"/idle-delay.service
   else
     echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
     exit 0
@@ -149,11 +149,11 @@ echo ""
 read -n1 -r -p "Idle-delay is ready to be installed, press any key to continue..."
 echo ""
 download_files
- ln -sfn $HOME/.idle_delay/idle-delay.sh "$HOME"/.local/bin/idle-delay
- chmod +x $HOME/.idle_delay/idle-delay.sh
- chmod +x $HOME/.idle_delay/idle-delay-config.sh
+ ln -sfn "$HOME"/.idle_delay/idle-delay.sh "$HOME"/.local/bin/idle-delay
+ chmod +x "$HOME"/.idle_delay/idle-delay.sh
+ chmod +x "$HOME"/.idle_delay/idle-delay-config.sh
  "$HOME"/.local/bin/idle-delay -c
- sed -i "s|/usr/local/bin/idle-delay|$HOME/.local/bin/idle-delay|g" $HOME/.config/systemd/user/idle-delay.service
+ sed -i "s|/usr/local/bin/idle-delay|$HOME/.local/bin/idle-delay|g" "$HOME"/.config/systemd/user/idle-delay.service
  systemctl --user enable idle-delay.service &&
  systemctl --user start idle-delay.service &&
  systemctl --user status idle-delay.service
@@ -167,7 +167,7 @@ uninstall() {
   rm -rf "$config_folder"
   rm -rf "$HOME"/.local/bin/idle-delay
   systemctl --user disable idle-delay.service
-  rm -rf $HOME/.config/systemd/user/idle-delay.service
+  rm -rf "$HOME"/.config/systemd/user/idle-delay.service
   echo "Uninstall finished, have a good day..."
 }
 
