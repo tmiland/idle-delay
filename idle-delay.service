@@ -1,0 +1,13 @@
+[Unit]
+Description=Auto adjust screen blank idle-delay based on phone connection
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+Environment="DISPLAY=:0"
+ExecStart=screen -DmS idle-delay /bin/bash -c '/usr/local/bin/idle-delay -ar; exec bash'
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
