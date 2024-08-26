@@ -143,12 +143,18 @@ then
 fi
   download_files() {
   if [[ $(command -v 'curl') ]]; then
-    curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
+    if [[ ! -f $cfg_file ]]
+    then
+      curl -fsSLk "$idle_delay_config_url" > "${config_folder}"/.idle_delay_config
+    fi
     curl -fsSLk "$idle_delay_config_sh_url" > "${config_folder}"/idle-delay-config.sh
     curl -fsSLk "$idle_delay_url" > "${config_folder}"/idle-delay.sh
     curl -fsSLk "$idle_delay_service" > "$systemd_user_folder"/idle-delay.service
   elif [[ $(command -v 'wget') ]]; then
-    wget -q "$idle_delay_config_url" -O "${config_folder}"/.idle_delay_config
+    if [[ ! -f $cfg_file ]]
+    then
+      wget -q "$idle_delay_config_url" -O "${config_folder}"/.idle_delay_config
+    fi
     wget -q "$idle_delay_config_sh_url" -O "${config_folder}"/idle-delay-config.sh
     wget -q "$idle_delay_url" -O "${config_folder}"/idle-delay.sh
     wget -q "$idle_delay_service" -O "$systemd_user_folder"/idle-delay.service
