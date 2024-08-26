@@ -134,7 +134,7 @@ if ! [[ -d $local_bin_folder ]]
 then
   mkdir -p "$local_bin_folder"
 fi
-if [[ $(command -v 'screen') ]]; then
+if ! [[ $(command -v 'screen') ]]; then
   sudo apt install screen
 fi
   download_files() {
