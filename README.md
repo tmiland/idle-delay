@@ -9,6 +9,10 @@ idle-delay is set to 10 minutes, and when connected it's set to 120 minutes.
 
 Default idle-delay is set to 60 minutes (if no phone is defined)
 
+<a href="https://raw.githubusercontent.com/tmiland/idle-delay/main/assets/phone_connected.png">![notification](https://raw.githubusercontent.com/tmiland/idle-delay/main/assets/phone_connected.png)</a>
+
+<a href="https://raw.githubusercontent.com/tmiland/idle-delay/main/assets/phone_disconnected.png">![notification](https://raw.githubusercontent.com/tmiland/idle-delay/main/assets/phone_disconnected.png)</a>
+
 ## Install
 
 With wget:
