@@ -96,7 +96,7 @@ auto-run() {
       then
         echo "Phone is connected, idle-delay set to 120 minutes"
         idle-delay "$idle_connected"
-        notify-send "Phone is connected, idle-delay set to 120 minutes"
+        notify-send -i phone-symbolic "Phone is connected, idle-delay set to 120 minutes"
       fi
     fi
     # Phone disconnected? Set idle-delay to 10 minutes
@@ -107,7 +107,7 @@ auto-run() {
       then
         echo "Phone is disconnected, idle-delay set to 10 minutes"
         idle-delay "$idle_disconnected"
-        notify-send "Phone is disconnected, idle-delay set to 10 minutes"
+        notify-send -i phone-symbolic "Phone is disconnected, idle-delay set to 10 minutes"
       fi
     fi
     sleep 7 # reset once / minute.
