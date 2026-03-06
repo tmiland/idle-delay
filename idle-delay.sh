@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034,SC1091
+
+## Author: Tommy Miland (@tmiland) - Copyright (c) 2026
+
+
+######################################################################
+####                          idle-delay                          ####
+####             Auto adjust screen blank idle-delay              ####
+####                  based on phone connection                   ####
+####                   Maintained by @tmiland                     ####
+######################################################################
 
 
 VERSION='1.0.0'
@@ -254,7 +265,7 @@ do
       uninstall
       exit 0
       ;;
-    -*|--*)
+    --*|-*)
       printf "Unrecognized option: $1\\n\\n"
       usage
       exit 1
