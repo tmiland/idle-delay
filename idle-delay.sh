@@ -12,7 +12,7 @@
 ######################################################################
 
 
-VERSION='1.0.0'
+VERSION='1.0.2'
 
 
 #------------------------------------------------------------------------------#
@@ -52,29 +52,41 @@ fi
 config_folder=$HOME/.idle_delay
 config=$config_folder/idle-delay-config.sh
 cfg_file=$config_folder/.idle_delay_config
+log_file=$config_folder/idle-delay.log
+# Auto-add newly seen phones with these defaults (set auto_add_phones=0 to disable)
+auto_add_phones=1
+auto_add_connected=120
+auto_add_disconnected=10
 
 if [[ ! -f $cfg_file ]]
 then
  mkdir -p "$config_folder"
 fi
+# Config format (one phone per line):
+# idle_default Vendor ProdID SerialNumber idle_connected idle_disconnected Manufacturer
+idle_default=60
+phone_vendor=()
+phone_prodid=()
+phone_serial=()
+phone_connected_time=()
+phone_disconnected_time=()
+phone_manufacturer=()
+last_phone=-1
+
 if [[ -f $cfg_file ]]
 then
-  IFS=' ' read -ra cfg_array < $cfg_file
-  idle_default="${cfg_array[0]}"
-  Vendor="${cfg_array[1]}"
-  ProdID="${cfg_array[2]}"
-  SerialNumber="${cfg_array[3]}"
-  idle_connected="${cfg_array[4]}"
-  idle_disconnected="${cfg_array[5]}"
-  Manufacturer="${cfg_array[6]}"
-else
-  idle_default=60
-  Vendor=
-  ProdID=
-  SerialNumber=
-  idle_connected=
-  idle_disconnected=
-  Manufacturer=
+  while IFS=' ' read -r c_default c_vendor c_prodid c_serial c_conn c_disc c_manu
+  do
+    [[ $c_default == '#'* ]] && continue
+    [[ -z ${c_vendor}${c_prodid}${c_serial} ]] && continue
+    [[ -n $c_default ]] && idle_default=$c_default
+    phone_vendor+=("$c_vendor")
+    phone_prodid+=("$c_prodid")
+    phone_serial+=("$c_serial")
+    phone_connected_time+=("$c_conn")
+    phone_disconnected_time+=("$c_disc")
+    phone_manufacturer+=("$c_manu")
+  done < "$cfg_file"
 fi
 
 config() {
@@ -93,48 +105,148 @@ idle-delay() {
 }
 
 auto-run() {
+  prev_state=""
+  prev_matched=""
   while true
   do
-    # Grab info from usb-devices
-    get_usb_info=$(
-      [[ $(
-      usb-devices | grep -C 3 "Vendor=$Vendor ProdID=$ProdID" ||
-      usb-devices | grep -C 3 "SerialNumber=$SerialNumber") =~ $Manufacturer ]] &&
-      echo connected ||
-      echo disconnected)
+    # Nothing configured: leave idle-delay alone
+    if [[ ${#phone_vendor[@]} -eq 0 ]]
+    then
+      sleep 7
+      continue
+    fi
+    # Match any configured phone against a single usb-devices snapshot
+    usb_snapshot=$(usb-devices)
+
+    # Auto-add unknown phones: MTP/ADB composite interface with a serial number
+    if [[ $auto_add_phones -eq 1 ]]
+    then
+      while IFS='|' read -r u_vendor u_prodid u_serial u_manufacturer
+      do
+        [[ -z $u_serial ]] && continue
+        known=0
+        for existing_serial in "${phone_serial[@]}"
+        do
+          [[ $existing_serial == "$u_serial" ]] && known=1 && break
+        done
+        [[ $known -eq 1 ]] && continue
+        printf '%s %s %s %s %s %s %s\n' \
+          "$idle_default" "$u_vendor" "$u_prodid" "$u_serial" \
+          "$auto_add_connected" "$auto_add_disconnected" \
+          "${u_manufacturer:-Unknown}" >> "$cfg_file"
+        phone_vendor+=("$u_vendor")
+        phone_prodid+=("$u_prodid")
+        phone_serial+=("$u_serial")
+        phone_connected_time+=("$auto_add_connected")
+        phone_disconnected_time+=("$auto_add_disconnected")
+        phone_manufacturer+=("${u_manufacturer:-Unknown}")
+        printf '%s auto-added %s %s:%s serial=%s\n' \
+          "$(date '+%F %T')" "${u_manufacturer:-Unknown}" \
+          "$u_vendor" "$u_prodid" "$u_serial" >> "$log_file"
+        notify-send \
+        --hint=string:sound-name:dialog-information \
+        --app-icon=dialog-information-symbolic \
+        --icon=phone-symbolic \
+        "Idle Delay" \
+        "New phone added: ${u_manufacturer:-Unknown} ($u_serial)"
+      done < <(printf '%s\n' "$usb_snapshot" | awk '
+        BEGIN { RS=""; FS="\n" }
+        {
+          v=""; p=""; s=""; m=""; mtp=0
+          for (i=1; i<=NF; i++) {
+            line=$i
+            if (line ~ /^P:/ && line ~ /Vendor=/) {
+              sub(/^P:[ \t]*Vendor=/, "", line)
+              split(line, a, /[ =]/)
+              v=a[1]; p=a[3]
+            } else if (line ~ /^S:/ && line ~ /SerialNumber=/) {
+              sub(/^S:[ \t]*SerialNumber=/, "", line); s=line
+            } else if (line ~ /^S:/ && line ~ /Manufacturer=/) {
+              sub(/^S:[ \t]*Manufacturer=/, "", line); m=line
+            } else if (line ~ /Sub=42/ && line ~ /Cls=ff\(vend\.\)/) {
+              mtp=1
+            }
+          }
+          if (v != "" && s != "" && mtp) print v "|" p "|" s "|" m
+        }')
+    fi
+
+    active_phone=-1
+    matched=()
+    for i in "${!phone_vendor[@]}"
+    do
+      if printf '%s\n' "$usb_snapshot" | awk \
+        -v v="${phone_vendor[$i]}" \
+        -v p="${phone_prodid[$i]}" \
+        -v s="${phone_serial[$i]}" \
+        -v m="${phone_manufacturer[$i]}" '
+          BEGIN { RS=""; found=0 }
+          {
+            if ((v != "" && p != "" && $0 ~ ("Vendor=" v " ProdID=" p)) ||
+                (s != "" && $0 ~ ("SerialNumber=" s))) {
+              if (m == "" || $0 ~ ("Manufacturer=" m)) { found=1; exit }
+            }
+          }
+          END { exit !found }'
+      then
+        matched+=("$i")
+        [[ $active_phone -lt 0 ]] && active_phone=$i
+      fi
+    done
+    if [[ $active_phone -ge 0 ]]
+    then
+      get_usb_info="connected"
+    else
+      get_usb_info="disconnected"
+    fi
+    if [[ ${matched[*]} != "$prev_matched" ]]
+    then
+      printf '%s state=%s phones=[%s]\n' \
+        "$(date '+%F %T')" "$get_usb_info" "${matched[*]}" >> "$log_file"
+      prev_matched="${matched[*]}"
+    fi
+
+    if [[ $active_phone -ge 0 ]]
+    then
+      idle_connected="${phone_connected_time[$active_phone]}"
+      idle_disconnected="${phone_disconnected_time[$active_phone]}"
+      last_phone=$active_phone
+    else
+      idx=$last_phone
+      [[ $idx -lt 0 ]] && idx=0
+      idle_connected="${phone_connected_time[$idx]}"
+      idle_disconnected="${phone_disconnected_time[$idx]}"
+    fi
+
     get_idle_delay=$(gsettings get org.gnome.desktop.session idle-delay | sed 's|uint32 ||g')
-    # Phone connected? Set idle-delay to 120 minutes
-    if [[ $get_usb_info == "connected" ]]
+    # React to real state changes only, so a manual idle-delay is not overridden
+    if [[ $get_usb_info == "connected" && $prev_state != "connected" ]]
     then
-      if [[ $(( get_idle_delay / 60 )) -eq $idle_disconnected ]] ||
-      [[ $(( get_idle_delay / 60 )) -eq $idle_default ]]
-      then
-        echo "Phone is connected, idle-delay set to 120 minutes"
-        idle-delay "$idle_connected"
-        notify-send \
-        --hint=string:sound-name:dialog-information \
-        --app-icon=dialog-information-symbolic \
-        --icon=phone-symbolic \
-        "Idle Delay" \
-        "Phone is connected, idle-delay set to 120 minutes"
-      fi
+      echo "Phone is connected, idle-delay set to $idle_connected minutes"
+      idle-delay "$idle_connected"
+      printf '%s connected phone=%s idle=%s\n' \
+        "$(date '+%F %T')" "$active_phone" "$idle_connected" >> "$log_file"
+      notify-send \
+      --hint=string:sound-name:dialog-information \
+      --app-icon=dialog-information-symbolic \
+      --icon=phone-symbolic \
+      "Idle Delay" \
+      "Phone is connected, idle-delay set to $idle_connected minutes"
     fi
-    # Phone disconnected? Set idle-delay to 10 minutes
-    if [[ $get_usb_info == "disconnected" ]]
+    if [[ $get_usb_info == "disconnected" && $prev_state != "disconnected" ]]
     then
-      if [[ $(( get_idle_delay / 60 )) -eq $idle_connected ]] ||
-      [[ $(( get_idle_delay / 60 )) -eq $idle_default ]]
-      then
-        echo "Phone is disconnected, idle-delay set to 10 minutes"
-        idle-delay "$idle_disconnected"
-        notify-send \
-        --hint=string:sound-name:dialog-information \
-        --app-icon=dialog-information-symbolic \
-        --icon=phone-symbolic \
-        "Idle Delay" \
-        "Phone is disconnected, idle-delay set to 10 minutes"
-      fi
+      echo "Phone is disconnected, idle-delay set to $idle_disconnected minutes"
+      idle-delay "$idle_disconnected"
+      printf '%s disconnected idle=%s\n' \
+        "$(date '+%F %T')" "$idle_disconnected" >> "$log_file"
+      notify-send \
+      --hint=string:sound-name:dialog-information \
+      --app-icon=dialog-information-symbolic \
+      --icon=phone-symbolic \
+      "Idle Delay" \
+      "Phone is disconnected, idle-delay set to $idle_disconnected minutes"
     fi
+    prev_state=$get_usb_info
     sleep 7 # reset once / minute.
   done # End of forever loop
 }
@@ -202,7 +314,7 @@ download_files
  systemctl --user status idle-delay.service --no-pager
  echo "Install finished, now connect your phone and enjoy..."
  echo "You can resume screen with 'screen -r idle-delay' "
- echo "Restart service with 'systemdctl --user restart idle-delay' "
+ echo "Restart service with 'systemctl --user restart idle-delay.service' "
 }
 
 uninstall() {

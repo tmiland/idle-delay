@@ -1,1 +1,6 @@
+# One phone per line:
+# idle_default Vendor ProdID SerialNumber idle_connected idle_disconnected Manufacturer
+# Example:
+# 60 2717 ff08 0000000000 120 10 Xiaomi
+# Unknown phones (MTP/ADB with a serial) are added automatically as 120/10.
 60
